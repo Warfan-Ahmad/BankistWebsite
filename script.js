@@ -201,3 +201,158 @@ window.addEventListener('scroll',function(e)
   else nav.classList.remove('sticky');
 });
 */
+
+/////////////////////////////////////////////////////////////Reveling Sections////////////////////////////////////////////////////////
+
+/* This section of code does the slide in of the section we start by selecting all the sections of the page */
+const allSections = document.querySelectorAll('.section');
+
+//Options for observer API call
+const opt = {
+  root:null, 
+  threshold: 0.15, //After 15% of the section is reveled
+};
+
+//Logic of revel section
+const revealSection = function(entries,observer)
+{
+  const [entry] = entries; //Taking the entry elements
+  //If the section is not intersecting we just return it back
+  if(!entry.isIntersecting) return 
+//otherwise we remove the section-- hidden from the target class
+  entry.target.classList.remove('section--hidden');
+  //we unobserve the these for performace otherwise it will keep adding the observer classes that is why we needed the second agrumnet of observer
+  observer.unobserve(entry.target);
+}
+
+
+const sectionObserver = new IntersectionObserver(revealSection,opt);
+//Looping over the array of selected sections and calling the observer on each section..... also adding the class section--hidden to each
+allSections.forEach(el =>
+  {
+    sectionObserver.observe(el);
+    el.classList.add('section--hidden');
+  });
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////Lazy loading Images///////////////////////////////////////////////////////
+
+  /* THis section starts with selecting all the images with data-set because if we sleect all the images it will include every image we have to change only those images whjich have data set thats where the original image is kept */
+
+  //Selecting images with data src attribute
+  const imgTarget = document.querySelectorAll('img[data-src]');
+//call back funtion of observer API
+  const loadImg = function(entries,observer)
+  {
+    const [entry] = entries;
+
+    //Setting the src to dataset src where original iamge is placing it on the low resoultion image
+    entry.target.src = entry.target.dataset.src;
+//Adding an event listener on load when the iamge loading is finished then we remove the blur effect we can directly remove it but that would not be good looking
+    entry.target.addEventListener('load',function()
+    {
+      entry.target.classList.remove('lazy-img');
+    });
+
+    observer.unobserve(entry.target);
+  }
+
+  const imgObserver = new IntersectionObserver(loadImg,{
+    root:null,
+    threshold:0,
+    rootMargin: `-200px`,
+  });
+
+  imgTarget.forEach(img => imgObserver.observe(img));
+
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  
+
+
+  ////////////////////////////////////////////////////////Testemonial slider /////////////////////////////////////////////////////////
+/* In this part of code i established a testomonial slider it started by selecting all the necessary elements*/
+  const slides = document.querySelectorAll('.slide');
+  const btnLeft = document.querySelector('.slider__btn--left');
+  const btnRight = document.querySelector('.slider__btn--right');
+  const dotContainer = document.querySelector('.dots');
+  
+//we need a variable current slide to be 0 which will help the inital slide to be 0
+  let currentSlide= 0;
+  //The max slide till we have to go is total slides which are a node list and will have a property of length.
+  const maxSlide = slides.length;
+
+  //Slide where we need to go function
+  const goToSlide = function(slide)
+  {
+    // In this part there is a calculation done which is to trasnlate X we have to translate it 100% 200% 300% which is achieved by 100 * i(0,1,2) - slide which is passed as argument
+    slides.forEach((s,i) => (s.style.transform = `translateX(${100 * (i-slide)}%)`));
+  };
+//In order to go to next slide we have function which first checks if the slide is less than max slide if it is then we call the function and if not we set the varibale back to 0
+  const nextSlide = function()
+  {
+    if(currentSlide === maxSlide - 1)
+    currentSlide = 0;
+    else
+    currentSlide++;
+
+    goToSlide(currentSlide);
+    activeDot(currentSlide);
+  };
+
+  const prevoiusSlide = function()
+  {
+    if(currentSlide === 0)
+      currentSlide = maxSlide - 1;
+    else
+      currentSlide--;
+    goToSlide(currentSlide);
+    activeDot(currentSlide);
+  };
+//now we have manipulated the DOM from JS we have created a createDot function 
+  const createDots = function()
+  {
+    //each slide after its end it attached a dot which is button and on click changes the slide
+    slides.forEach(function( _,i){
+    dotContainer.insertAdjacentHTML('beforeend',`<button class="dots__dot" data-slide= "${i}"></button>`);
+  });
+  };
+//in this part we are adding and removing the class active from the button dots
+  const activeDot = function(slide)
+  {
+    document.querySelectorAll('.dots__dot').forEach(dot => dot.classList.remove('dots__dot--active'));  
+    document.querySelector(`.dots__dot[data-slide = "${slide}"]`).classList.add('dots__dot--active');
+  };
+// event listener on the buttons
+
+  btnRight.addEventListener('click', nextSlide);
+  btnLeft.addEventListener('click',prevoiusSlide);
+//evenet listeners for the key press
+  document.addEventListener('keydown', function(e)
+  {
+    if(e.key === 'ArrowLeft')
+    prevoiusSlide();
+    if(e.key === 'ArrowRight')
+    nextSlide();
+  });
+//on clicking dot event listener
+  dotContainer.addEventListener('click', function(e)
+  {
+    if(e.target.classList.contains('dots__dot'))
+    {
+      const slide = e.target.dataset.slide;
+      goToSlide(slide);
+      activeDot(slide);
+    }
+  });
+
+//initial function which first set everything before starting
+  const init = function()
+  { 
+    goToSlide(0);
+    createDots();
+    activeDot(0);
+  }
+  init()
+
